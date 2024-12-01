@@ -1,0 +1,32 @@
+#!/bin/bash
+
+# Prompt the user for IP address
+if [ "$#" -ne 1 ] ; then
+        echo "Usage: scvnmap IP-Address"
+        exit 1
+fi
+
+IP=$1
+
+# Prompt the user for Nmap result
+echo ""
+echo "[!] Please paste the Nmap results and press Ctrl+D when done:"
+
+# Read the input and store it in a variable
+nmap_output=$(cat)
+
+# Extract only the ports from the Nmap result and join them with commas
+parsed_ports=$(echo "$nmap_output" | grep -oP '^\d+(?=/tcp)' | paste -sd "," -)
+
+# Output the comma-separated list of ports
+echo ""
+echo "[+] nmap $IP -p $parsed_ports -sCV --max-retries=1 --stats-every=5s -oA nmap/scv-$IP"
+echo ""
+echo "[!] Running NMAP scan on targeted ports"
+nmap "$IP" -p "$parsed_ports" -sCV --max-retries=1 --stats-every=5s -oA "nmap/scv-$IP"
+xsltproc "nmap/scv-$IP.xml" -o "nmap/scv-$IP-results.html"
+firefox "nmap/scv-$IP-results.html &"
+
+# Finish
+echo ""
+echo "[!] Program ended"
